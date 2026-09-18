@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>全国ダム貯水率マップ</title>
+  
+  <!-- ファビコン（💧絵文字） -->
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>💧</text></svg>">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+  　
+    body {
+      height: 100vh;
+      width: 100vw;
+      background: #121212;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    #map-wrapper {
+      position: relative;
+      flex: 1;
+      width: 100%;
+    }
+    #map {
+      height: 100%;
+      width: 100%;
+      background: #121212;
+    }
+
+    /* 広告コンテナのサイズ制限 */
+    #adContainer {
+      width: 100%;
+      height: 60px;
+      max-height: 60px;
+      background: #1e293b;
+      border-top: 1px solid #334155;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 2000;
+      overflow: hidden;
+    }
+
+    /* 基本UIパネルスタイル */
+    .ui-panel {
+      position: absolute; z-index: 1000; background: rgba(18,18,18,0.85);
+      color: #fff; border: 1px solid #334155; border-radius: 8px; padding: 6px 10px; font-size: 12px;
+      backdrop-filter: blur(4px);
+    }
+    .top-left { top: 10px; left: 10px; font-weight: bold; }
+    .top-right { top: 10px; right: 10px; display: flex; gap: 6px; align-items: center; }
+    .bottom-left { bottom: 10px; left: 10px; }
+    
+    .bottom-right-credit {
+      position: absolute; bottom: 10px; right: 60px; z-index: 1000;
+      background: rgba(18,18,18,0.85); color: #cbd5e1; border: 1px solid #334155;
+      border-radius: 8px; padding: 6px 10px; font-size: 10px; text-align: right;
+      line-height: 1.4; backdrop-filter: blur(4px);
+    }
+    .bottom-right-credit a { color: #38bdf8; text-decoration: none; }
+
+    .search-input {
+      border: 1px solid #334155; background: #1e293b; color: #fff;
+      padding: 5px 8px; border-radius: 6px; font-size: 12px; outline: none; width: 120px;
+    }
+
+    .legend-dots { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 3px; vertical-align: middle; }
+    
+    .retry-btn {
+      color: #38bdf8;
+      cursor: pointer;
+      text-decoration: underline;
+      margin-left: 6px;
+    }
+
+    /* スマホ画面向けのレイアウト自動最適化 (画面幅 600px 以下) */
+    @media (max-width: 600px) {
+      #adContainer {
+        height: 50px;
+        max-height: 50px;
+      }
+      .top-left {
+        top: 50px;
+        left: 10px;
+        font-size: 11px;
+        padding: 4px 8px;
+      }
+      .top-right {
+        top: 10px;
+        left: 10px;
+        right: 10px;
+        justify-content: space-between;
+      }
+      .search-input {
+        flex: 1;
+        width: auto;
+      }
+      .bottom-left {
+        bottom: 45px;
+        left: 10px;
+        font-size: 10px;
+        padding: 4px 8px;
+      }
+      .bottom-right-credit {
+        bottom: 10px;
+        left: 10px;
+        right: 60px;
+        text-align: left;
+        font-size: 9px;
+      }
+    }
+
+    /* マーカーデザイン */
+    .dam-marker-container {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .dam-marker-dot {
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      border: 2px solid #ffffff;
+      box-shadow: 0 0 6px rgba(0,0,0,0.6);
+    }
+
+    .dam-marker-circle {
+      width: 42px;
+      height: 42px;
+      border-radius: 50%;
+      background: #0f172a;
+      border: 4px solid var(--border-color);
+      color: #ffffff;
+      font-weight: 800;
+      font-size: 13px;
+      letter-spacing: -0.5px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.6);
+      user-select: none;
+      white-space: nowrap;
+    }
+  </style>
+</head>
+<body>
+
+  <div id="map-wrapper">
+    <div class="ui-panel top-left">
+      💧 全国のダム貯水率 <span id="updatedAtText" style="font-weight:normal; font-size:11px; color:#94a3b8; margin-left:4px;">(読み込み中...)</span>
+    </div>
+
+    <div class="ui-panel top-right">
+      <input type="text" id="searchInput" class="search-input" placeholder="ダム名検索..." list="damList" onchange="onSearch(this.value)">
+      <datalist id="damList"></datalist>
+      <span id="badge" style="color:#38bdf8; font-weight:bold;">0件</span>
+    </div>
+
+    <div class="ui-panel bottom-left">
+      <span class="legend-dots" style="background:#38bdf8;"></span>≥60%
+      <span class="legend-dots" style="background:#f59e0b; margin-left:4px;"></span>30-60%
+      <span class="legend-dots" style="background:#ef4444; margin-left:4px;"></span>&lt;30%
+    </div>
+
+    <div class="bottom-right-credit">
+      情報提供: <a href="https://www.mlit.go.jp/mizukokudo/mizsei/mizukokudo_mizsei_tk2_000024.html" target="_blank" rel="noopener noreferrer">国土交通省 全国のダム情報一覧</a><br>
+      作成: <a href="https://x.com/bluray1123" target="_blank" rel="noopener noreferrer">@bluray1123</a> ＆ <a href="https://docs.google.com/forms/d/e/1FAIpQLSfDDxh_Wy3m93HzI__5ei855Ioke4Gz3JLWkTg2HEaV-7b5dA/viewform?usp=publish-editor" target="_blank" rel="noopener noreferrer">問い合わせ</a>
+    </div>
+
+    <div id="map"></div>
+  </div>
+
+  <div id="adContainer">
+    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6264233201703990"
+         crossorigin="anonymous"></script>
+    <ins class="adsbygoogle"
+         style="display:block; width:100%; height:100%;"
+         data-ad-client="ca-pub-6264233201703990"
+         data-ad-slot="8795778956"
+         data-ad-format="horizontal"
+         data-full-width-responsive="false"></ins>
+    <script>
+         (adsbygoogle = window.adsbygoogle || []).push({});
+    </script>
+  </div>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script>
+    const map = L.map('map', { zoomControl: false }).setView([36.5, 137.5], 6);
+
+    L.control.zoom({ position: 'bottomright' }).addTo(map);
+
+    L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}', {
+      attribution: 'Esri', maxZoom: 16
+    }).addTo(map);
+
+    const GIST_ID = "6de984eb9550c3bd197c9bae0bfc7456";
+    const GIST_URL = `https://gist.githubusercontent.com/raw/${GIST_ID}/dam_data.json?t=${Date.now()}`;
+
+    const damStore = new Map();
+    let layerGroup = L.layerGroup().addTo(map);
+
+    function getColor(rate) {
+      if (rate < 30) return '#ef4444';
+      if (rate < 60) return '#f59e0b';
+      return '#38bdf8';
+    }
+
+    function formatTime(isoString) {
+      if (!isoString) return "";
+      const d = new Date(isoString);
+      if (isNaN(d.getTime())) return "";
+      return `${d.getFullYear()}/${String(d.getMonth()+1).padStart(2,'0')}/${String(d.getDate()).padStart(2,'0')} ${d.getHours()}時JST`;
+    }
+
+    function formatRateDisplay(rateNum) {
+      if (rateNum >= 100) {
+        return "100";
+      }
+      return rateNum.toFixed(1);
+    }
+
+    function createCustomIcon(color, rateNum, isDetailed) {
+      const displayText = formatRateDisplay(rateNum);
+      const html = isDetailed
+        ? `<div class="dam-marker-circle" style="--border-color: ${color};">${displayText}</div>`
+        : `<div class="dam-marker-dot" style="background-color: ${color};"></div>`;
+        
+      const size = isDetailed ? [42, 42] : [14, 14];
+      const anchor = isDetailed ? [21, 21] : [7, 7];
+
+      return L.divIcon({
+        html: `<div class="dam-marker-container">${html}</div>`,
+        className: '', 
+        iconSize: size,
+        iconAnchor: anchor
+      });
+    }
+
+    // ズームレベル7以上で数値表記付きの大きな円に切り替え
+    function updateMarkerStyles() {
+      const zoom = map.getZoom();
+      const isDetailed = zoom >= 7;
+
+      damStore.forEach(item => {
+        const { marker, color, rate } = item;
+        marker.setIcon(createCustomIcon(color, rate, isDetailed));
+      });
+    }
+
+    function renderDams(data, updatedAt) {
+      layerGroup.clearLayers();
+      damStore.clear();
+
+      const datalistEl = document.getElementById('damList');
+      datalistEl.innerHTML = '';
+      const fragment = document.createDocumentFragment();
+
+      const sortedData = [...data].sort((a, b) => {
+        const rateA = parseFloat(a.storage_rate) || 0;
+        const rateB = parseFloat(b.storage_rate) || 0;
+        return rateB - rateA;
+      });
+
+      const isDetailed = map.getZoom() >= 7;
+
+      sortedData.forEach(d => {
+        if (!d.lat || !d.lng) return;
+
+        const rate = parseFloat(d.storage_rate) || 0;
+        const color = getColor(rate);
+        const trimmedName = d.dam_name.trim();
+
+        const marker = L.marker([d.lat, d.lng], {
+          icon: createCustomIcon(color, rate, isDetailed),
+          zIndexOffset: Math.round((100 - rate) * 10)
+        });
+
+        const displayText = formatRateDisplay(rate);
+        const link = d.url ? `<br><a href="${d.url}" target="_blank" style="color:#38bdf8;">川の防災情報 ↗</a>` : '';
+        marker.bindPopup(`<b>${trimmedName}</b><br>貯水率: ${displayText}%${link}`);
+
+        layerGroup.addLayer(marker);
+        damStore.set(trimmedName, { lat: d.lat, lng: d.lng, marker, color, rate });
+
+        const opt = document.createElement('option');
+        opt.value = trimmedName;
+        fragment.appendChild(opt);
+      });
+
+      datalistEl.appendChild(fragment);
+      document.getElementById('badge').innerText = `${data.length}件`;
+      document.getElementById('badge').style.color = "#cbd5e1";
+
+      if (updatedAt) {
+        const formatted = formatTime(updatedAt);
+        if (formatted) {
+          document.getElementById('updatedAtText').innerText = `(更新: ${formatted})`;
+        }
+      }
+    }
+
+    map.on('zoomend', updateMarkerStyles);
+
+    async function initApp() {
+      try {
+        const res = await fetch(GIST_URL, { cache: 'no-cache' });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        
+        const json = await res.json();
+        if (json && Array.isArray(json.data)) {
+          renderDams(json.data, json.updated_at);
+        } else {
+          throw new Error("データ構造が無効です");
+        }
+      } catch (err) {
+        console.error("データ取得エラー:", err);
+        document.getElementById('updatedAtText').innerHTML = 
+          `<span style="color:#ef4444;">(取得失敗)</span><span class="retry-btn" onclick="initApp()">再試行</span>`;
+      }
+    }
+
+    initApp();
+
+    function onSearch(name) {
+      if (!name) return;
+      const target = damStore.get(name.trim());
+      if (target) {
+        map.flyTo([target.lat, target.lng], 12);
+        target.marker.openPopup();
+      } else {
+        alert("該当するダムが見つかりませんでした");
+      }
+    }
+  </script>
+</body>
+</html>

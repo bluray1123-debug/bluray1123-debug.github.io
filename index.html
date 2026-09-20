@@ -57,31 +57,64 @@
       backdrop-filter: blur(4px);
     }
     
-    /* 左上タイトル部分（文字サイズを大きく調整） */
+    /* 上部タイトル＆検索バー */
     .top-left { 
       top: 10px; 
       left: 10px; 
       font-weight: bold; 
       font-size: 14px; 
     }
-    
     .top-right { top: 10px; right: 10px; display: flex; gap: 6px; align-items: center; }
-    .bottom-left { bottom: 10px; left: 10px; }
     
-    .bottom-right-credit {
-      position: absolute; bottom: 10px; right: 60px; z-index: 1000;
-      background: rgba(18,18,18,0.85); color: #cbd5e1; border: 1px solid #334155;
-      border-radius: 8px; padding: 6px 10px; font-size: 10px; text-align: right;
-      line-height: 1.4; backdrop-filter: blur(4px);
+    /* 左下：情報提供・クレジット枠 */
+    .bottom-left-credit {
+      position: absolute; 
+      bottom: 10px; 
+      left: 10px; 
+      z-index: 1000;
+      background: rgba(18,18,18,0.85); 
+      color: #cbd5e1; 
+      border: 1px solid #334155;
+      border-radius: 8px; 
+      padding: 6px 10px; 
+      font-size: 10px; 
+      text-align: left;
+      line-height: 1.4; 
+      backdrop-filter: blur(4px);
     }
-    .bottom-right-credit a { color: #38bdf8; text-decoration: none; }
+    .bottom-left-credit a { color: #38bdf8; text-decoration: none; }
+
+    /* 右下：ズームボタンの左隣に配置する凡例 */
+    .bottom-right-legend {
+      position: absolute;
+      bottom: 25px;
+      right: 50px;
+      z-index: 1000;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      font-size: 11px;
+    }
+    .legend-title {
+      font-size: 10px;
+      font-weight: bold;
+      color: #94a3b8;
+      margin-bottom: 2px;
+      border-bottom: 1px solid #334155;
+      padding-bottom: 2px;
+    }
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
 
     .search-input {
       border: 1px solid #334155; background: #1e293b; color: #fff;
       padding: 5px 8px; border-radius: 6px; font-size: 12px; outline: none; width: 120px;
     }
 
-    .legend-dots { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 3px; vertical-align: middle; }
+    .legend-dots { display: inline-block; width: 10px; height: 10px; border-radius: 50%; vertical-align: middle; }
     
     .retry-btn {
       color: #38bdf8;
@@ -97,13 +130,13 @@
         max-height: 50px;
       }
       .top-left {
-        top: 50px;
+        top: 10px;
         left: 10px;
         font-size: 13px;
         padding: 5px 10px;
       }
       .top-right {
-        top: 10px;
+        top: 40px;
         left: 10px;
         right: 10px;
         justify-content: space-between;
@@ -112,19 +145,17 @@
         flex: 1;
         width: auto;
       }
-      .bottom-left {
+      .bottom-left-credit {
         bottom: 10px;
         left: 10px;
-        font-size: 10px;
-        padding: 4px 8px;
-      }
-      .bottom-right-credit {
-        bottom: 10px;
-        left: auto;
-        right: 50px;
-        text-align: right;
         font-size: 9px;
-        max-width: 55%;
+        padding: 5px 8px;
+      }
+      .bottom-right-legend {
+        bottom: 20px;
+        right: 46px;
+        font-size: 10px;
+        padding: 5px 8px;
       }
     }
 
@@ -175,16 +206,19 @@
       <span id="badge" style="color:#38bdf8; font-weight:bold;">0件</span>
     </div>
 
-    <div class="ui-panel bottom-left">
-      <span class="legend-dots" style="background:#38bdf8;"></span>≥60%
-      <span class="legend-dots" style="background:#f59e0b; margin-left:4px;"></span>30-60%
-      <span class="legend-dots" style="background:#ef4444; margin-left:4px;"></span>&lt;30%
-    </div>
-
-    <div class="bottom-right-credit">
+    <!-- 左下：クレジット -->
+    <div class="bottom-left-credit">
       <a href="info.html" target="_blank">情報提供&操作方法</a><br>
       <a href="privacy.html" target="_blank">プライバシーポリシー</a><br>
       作成: @かーくん ＆ <a href="https://docs.google.com/forms/d/e/1FAIpQLSfDDxh_Wy3m93HzI__5ei855Ioke4Gz3JLWkTg2HEaV-7b5dA/viewform?usp=publish-editor" target="_blank" rel="noopener noreferrer">問い合わせ</a>
+    </div>
+
+    <!-- 右下：ズームボタンの左隣に配置する凡例 -->
+    <div class="ui-panel bottom-right-legend">
+      <div class="legend-title">貯水率</div>
+      <div class="legend-item"><span class="legend-dots" style="background:#38bdf8;"></span>≥60%</div>
+      <div class="legend-item"><span class="legend-dots" style="background:#f59e0b;"></span>30-60%</div>
+      <div class="legend-item"><span class="legend-dots" style="background:#ef4444;"></span>&lt;30%</div>
     </div>
 
     <div id="map"></div>

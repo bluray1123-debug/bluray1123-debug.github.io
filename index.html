@@ -8,13 +8,9 @@
   
   <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>💧</text></svg>">
   
-  <!-- LeafletのCSSとJSは、必ず2つとも<head>の中で読み込みます -->
+  <!-- LeafletのCSSとJS -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-  
-  <!-- ファビコン（💧絵文字） -->
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>💧</text></svg>">
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -60,7 +56,15 @@
       color: #fff; border: 1px solid #334155; border-radius: 8px; padding: 6px 10px; font-size: 12px;
       backdrop-filter: blur(4px);
     }
-    .top-left { top: 10px; left: 10px; font-weight: bold; }
+    
+    /* 左上タイトル部分（文字サイズを大きく調整） */
+    .top-left { 
+      top: 10px; 
+      left: 10px; 
+      font-weight: bold; 
+      font-size: 14px; 
+    }
+    
     .top-right { top: 10px; right: 10px; display: flex; gap: 6px; align-items: center; }
     .bottom-left { bottom: 10px; left: 10px; }
     
@@ -95,8 +99,8 @@
       .top-left {
         top: 50px;
         left: 10px;
-        font-size: 11px;
-        padding: 4px 8px;
+        font-size: 13px;
+        padding: 5px 10px;
       }
       .top-right {
         top: 10px;
@@ -109,17 +113,18 @@
         width: auto;
       }
       .bottom-left {
-        bottom: 45px;
+        bottom: 10px;
         left: 10px;
         font-size: 10px;
         padding: 4px 8px;
       }
       .bottom-right-credit {
         bottom: 10px;
-        left: 10px;
-        right: 60px;
-        text-align: left;
+        left: auto;
+        right: 50px;
+        text-align: right;
         font-size: 9px;
+        max-width: 55%;
       }
     }
 
@@ -161,7 +166,7 @@
 
   <div id="map-wrapper">
     <div class="ui-panel top-left">
-      💧 全国のダム貯水率 <span id="updatedAtText" style="font-weight:normal; font-size:11px; color:#94a3b8; margin-left:4px;">(読み込み中...)</span>
+      💧 全国のダム貯水率 <span id="updatedAtText" style="font-weight:normal; font-size:0.85em; color:#94a3b8; margin-left:4px;">(読み込み中...)</span>
     </div>
 
     <div class="ui-panel top-right">
@@ -177,8 +182,9 @@
     </div>
 
     <div class="bottom-right-credit">
-      情報提供: <a href="https://www.mlit.go.jp/mizukokudo/mizsei/mizukokudo_mizsei_tk2_000024.html" target="_blank" rel="noopener noreferrer">国土交通省 全国のダム情報一覧</a><br>
-      作成: <a href="https://x.com/bluray1123" target="_blank" rel="noopener noreferrer">@かーくん</a> ＆ <a href="https://docs.google.com/forms/d/e/1FAIpQLSfDDxh_Wy3m93HzI__5ei855Ioke4Gz3JLWkTg2HEaV-7b5dA/viewform?usp=publish-editor" target="_blank" rel="noopener noreferrer">問い合わせ</a>
+      <a href="info.html" target="_blank">情報提供&操作方法</a><br>
+      <a href="privacy.html" target="_blank">プライバシーポリシー</a><br>
+      作成: @かーくん ＆ <a href="https://docs.google.com/forms/d/e/1FAIpQLSfDDxh_Wy3m93HzI__5ei855Ioke4Gz3JLWkTg2HEaV-7b5dA/viewform?usp=publish-editor" target="_blank" rel="noopener noreferrer">問い合わせ</a>
     </div>
 
     <div id="map"></div>
@@ -250,7 +256,6 @@
       });
     }
 
-    // ズームレベル7以上で数値表記付きの大きな円に切り替え
     function updateMarkerStyles() {
       const zoom = map.getZoom();
       const isDetailed = zoom >= 7;
